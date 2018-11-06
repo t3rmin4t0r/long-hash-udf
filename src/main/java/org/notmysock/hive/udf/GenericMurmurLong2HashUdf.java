@@ -31,6 +31,7 @@ public class GenericMurmurLong2HashUdf extends GenericUDF {
 
 
     obtainLongConverter(arguments, 0, inputTypes, converters);
+    obtainLongConverter(arguments, 1, inputTypes, converters);
 
     ObjectInspector outputOI = PrimitiveObjectInspectorFactory.writableIntObjectInspector;
 
@@ -40,7 +41,7 @@ public class GenericMurmurLong2HashUdf extends GenericUDF {
   @Override
   public Object evaluate(DeferredObject[] arguments) throws HiveException {
     final long l0 = getLongValue(arguments, 0, converters);
-    final long l1 = getLongValue(arguments, 0, converters);
+    final long l1 = getLongValue(arguments, 1, converters);
     /*
      * 2x murmur + XOR + cast (lazy, but fix this with a chained Murmur32)
      */
