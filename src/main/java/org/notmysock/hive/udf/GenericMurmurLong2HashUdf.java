@@ -51,91 +51,66 @@ public class GenericMurmurLong2HashUdf extends GenericUDF {
     final long l0 = getLongValue(arguments, 0, converters);
     final long l1 = getLongValue(arguments, 1, converters);
 
-    final int h = hash32(l0, l1);
+    final int h = calculateTwoLongHashCode(l0, l1);
     output.set(h);
     return output;
   }
 
-  public static int hash32(long l0, long l1) {
-    return hash32(l0, l1, DEFAULT_SEED);
+  private static int murmur32Body(int k, int hash) {
+    k *= C1_32;
+    k = Integer.rotateLeft(k, R1_32);
+    k *= C2_32;
+    hash ^= k;
+    return Integer.rotateLeft(hash, R2_32) * M_32 + N_32;
   }
 
-  public static int hash32(long l0, long l1, int seed) {
-    int hash = seed;
-
-    final byte  b0 = (byte) (l0 >> 56);
-    final byte  b1 = (byte) (l0 >> 48);
-    final byte  b2 = (byte) (l0 >> 40);
-    final byte  b3 = (byte) (l0 >> 32);
-    final byte  b4 = (byte) (l0 >> 24);
-    final byte  b5 = (byte) (l0 >> 16);
-    final byte  b6 = (byte) (l0 >>  8);
-    final byte  b7 = (byte) (l0 >>  0);
-    final byte  b8 = (byte) (l1 >> 56);
-    final byte  b9 = (byte) (l1 >> 48);
-    final byte b10 = (byte) (l1 >> 40);
-    final byte b11 = (byte) (l1 >> 32);
-    final byte b12 = (byte) (l1 >> 24);
-    final byte b13 = (byte) (l1 >> 16);
-    final byte b14 = (byte) (l1 >>  8);
-    final byte b15 = (byte) (l1 >>  0);
-
-    // body
-    int k;
-
-    // Roll 1
-    k = (b0 & 0xff)
-        | ((b1 & 0xff) << 8)
-        | ((b2 & 0xff) << 16)
-        | ((b3 & 0xff) << 24);
-    k *= C1_32;
-    k = Integer.rotateLeft(k, R1_32);
-    k *= C2_32;
-    hash ^= k;
-    hash = Integer.rotateLeft(hash, R2_32) * M_32 + N_32;
-
-    // Roll 2
-    k = (b4 & 0xff)
-        | ((b5 & 0xff) << 8)
-        | ((b6 & 0xff) << 16)
-        | ((b7 & 0xff) << 24);
-    k *= C1_32;
-    k = Integer.rotateLeft(k, R1_32);
-    k *= C2_32;
-    hash ^= k;
-    hash = Integer.rotateLeft(hash, R2_32) * M_32 + N_32;
-
-    // Roll 3
-    k = (b8 & 0xff)
-        | ((b9 & 0xff) << 8)
-        | ((b10 & 0xff) << 16)
-        | ((b11 & 0xff) << 24);
-    k *= C1_32;
-    k = Integer.rotateLeft(k, R1_32);
-    k *= C2_32;
-    hash ^= k;
-    hash = Integer.rotateLeft(hash, R2_32) * M_32 + N_32;
-
-    // Roll 4
-    k = (b12 & 0xff)
-        | ((b13 & 0xff) << 8)
-        | ((b14 & 0xff) << 16)
-        | ((b15 & 0xff) << 24);
-    k *= C1_32;
-    k = Integer.rotateLeft(k, R1_32);
-    k *= C2_32;
-    hash ^= k;
-    hash = Integer.rotateLeft(hash, R2_32) * M_32 + N_32;
-
-    // finalization
+  private static int murmur32Finalize(int hash) {
     hash ^= 16;
     hash ^= (hash >>> 16);
     hash *= 0x85ebca6b;
     hash ^= (hash >>> 13);
     hash *= 0xc2b2ae35;
     hash ^= (hash >>> 16);
-
     return hash;
+  }
+
+  /**
+   * Murmur3 32-bit variant.
+   * @see Murmur3#hash32(byte[], int, int, int)
+   */
+  private static int murmur32(long l0, long l1, int seed) {
+    int hash = seed;
+    final long r0 = Long.reverseBytes(l0);
+    final long r1 = Long.reverseBytes(l1);
+
+    hash = murmur32Body((int) r0, hash);
+    hash = murmur32Body((int) (r0 >>> 32), hash);
+    hash = murmur32Body((int) (r1), hash);
+    hash = murmur32Body((int) (r1 >>> 32), hash);
+
+    return murmur32Finalize(hash);
+  }
+
+  /**
+   * Murmur3 32-bit variant.
+   * @see Murmur3#hash32(byte[], int, int, int)
+   */
+  private static int murmur32(long l0, int seed) {
+    int hash = seed;
+    final long r0 = Long.reverseBytes(l0);
+
+    hash = murmur32Body((int) r0, hash);
+    hash = murmur32Body((int) (r0 >>> 32), hash);
+
+    return murmur32Finalize(hash);
+  }
+
+  public static int calculateTwoLongHashCode(long l0, long l1) {
+    return murmur32(l0, l1, DEFAULT_SEED);
+  }
+
+  public static int calculateLongHashCode(long key) {
+    return murmur32(key, DEFAULT_SEED);
   }
 
   @Override

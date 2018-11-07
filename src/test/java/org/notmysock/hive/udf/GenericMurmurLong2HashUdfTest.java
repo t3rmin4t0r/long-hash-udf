@@ -13,7 +13,8 @@ public class GenericMurmurLong2HashUdfTest extends TestCase {
       for (int j = 0; j < 1000; j++) {
         buffer.putLong(0, i);
         buffer.putLong(8, j);
-        assertEquals(Murmur3.hash32(buffer.array()), GenericMurmurLong2HashUdf.hash32(i, j));
+        assertEquals(Murmur3.hash32(buffer.array()),
+            GenericMurmurLong2HashUdf.calculateTwoLongHashCode(i, j));
       }
     }
   }
@@ -27,7 +28,8 @@ public class GenericMurmurLong2HashUdfTest extends TestCase {
         long y = random.nextLong();
         buffer.putLong(0, x);
         buffer.putLong(8, y);
-        assertEquals(Murmur3.hash32(buffer.array()), GenericMurmurLong2HashUdf.hash32(x, y));
+        assertEquals(Murmur3.hash32(buffer.array()),
+            GenericMurmurLong2HashUdf.calculateTwoLongHashCode(x, y));
       }
     }
   }
